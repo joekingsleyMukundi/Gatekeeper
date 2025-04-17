@@ -18,4 +18,6 @@ migratedown:
 	migrate -path db/migrations -database "postgresql://root:secret@localhost:5432/gate_keeper?sslmode=disable" -verbose down
 sqlc:
 	sqlc generate
-.PHONY: getpostgres postgres startpostgres stoppostgres createdb dropdb sqlc
+test:
+	go test -v -cover ./...
+.PHONY: getpostgres postgres startpostgres stoppostgres createdb dropdb sqlc test

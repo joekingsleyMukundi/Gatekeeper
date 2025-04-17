@@ -10,7 +10,7 @@ RETURNING *;
 SELECT * FROM users
 WHERE username = $1 LIMIT 1;
 
--- name: ListUser :one
+-- name: ListUsers :many
 SELECT * FROM users
 ORDER BY username
 LIMIT $1 
