@@ -56,29 +56,45 @@ func (q *Queries) GetUser(ctx context.Context, username string) (User, error) {
 	return i, err
 }
 
-const listUser = `-- name: ListUser :one
+const listUsers = `-- name: ListUsers :many
 SELECT username, email, hashed_password, created_at, password_changed_at FROM users
 ORDER BY username
 LIMIT $1 
 OFFSET $2
 `
 
-type ListUserParams struct {
+type ListUsersParams struct {
 	Limit  int32 `json:"limit"`
 	Offset int32 `json:"offset"`
 }
 
-func (q *Queries) ListUser(ctx context.Context, arg ListUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, listUser, arg.Limit, arg.Offset)
-	var i User
-	err := row.Scan(
-		&i.Username,
-		&i.Email,
-		&i.HashedPassword,
-		&i.CreatedAt,
-		&i.PasswordChangedAt,
-	)
-	return i, err
+func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, listUsers, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []User{}
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.Username,
+			&i.Email,
+			&i.HashedPassword,
+			&i.CreatedAt,
+			&i.PasswordChangedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateUser = `-- name: UpdateUser :one
