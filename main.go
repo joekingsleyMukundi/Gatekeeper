@@ -7,6 +7,7 @@ import (
 	"github.com/joekingsleyMukundi/Gatekeeper/api"
 	db "github.com/joekingsleyMukundi/Gatekeeper/db/sqlc"
 	"github.com/joekingsleyMukundi/Gatekeeper/utils"
+	_ "github.com/lib/pq"
 )
 
 func main() {
