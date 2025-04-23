@@ -11,7 +11,8 @@ createdb:
 dropdb:
 	docker exec -it GKpostgres dropdb gate_keeper
 migrate:
-	migrate create -ext sql -dir db/migrations -seq init_schema
+	@read -p "Enter migration name: " name; \
+	migrate create -ext sql -dir db/migrations -seq $$name
 migrateup:
 	migrate -path db/migrations -database "postgresql://root:secret@localhost:5432/gate_keeper?sslmode=disable" -verbose up
 migratedown:
