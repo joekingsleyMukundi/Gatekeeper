@@ -19,6 +19,10 @@ migratedown:
 	migrate -path db/migrations -database "postgresql://root:secret@localhost:5432/gate_keeper?sslmode=disable" -verbose down
 sqlc:
 	sqlc generate
+mock:
+	mockgen -package mockdb -destination db/mock/store.go github.com/joekingsleyMukundi/Gatekeeper/db/sqlc Store
 test:
 	go test -v -cover ./...
-.PHONY: getpostgres postgres startpostgres stoppostgres createdb dropdb sqlc test
+run:
+	go run main.go
+.PHONY: getpostgres postgres startpostgres stoppostgres createdb dropdb sqlc test run mock

@@ -9,6 +9,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
+	go.uber.org/mock v0.5.1
 	golang.org/x/crypto v0.37.0
 )
 

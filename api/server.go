@@ -33,6 +33,10 @@ func NewSever(config utils.Config, store db.Store) (*Server, error) {
 func (server *Server) routerSetup() {
 	router := gin.Default()
 	// TO DO : Create user suth apis
+	router.POST("/users/register", server.createUser)
+	router.POST("/users/login", server.loginUser)
+	router.POST("/auth/renew_access", server.renewAccessToken)
+
 	server.Router = router
 }
 func (server *Server) Start(address string) error {
