@@ -193,3 +193,111 @@ func (server *Server) renewAccessToken(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, rsp)
 }
+
+type forgortPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+type forgotPasswordResponse struct {
+	Message string `json:"message"`
+}
+
+func (server *Server) forgotPassword(ctx *gin.Context) {
+	var req forgortPasswordRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	user, err := server.store.LocateUser(ctx, req.Email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	resetToken, err := utils.RandomByte(20)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	psResetTokenHash := utils.HashRandomBytes(resetToken)
+	arg := db.CreatePasswordResetTokenParams{
+		Owner:     user.Username,
+		Token:     psResetTokenHash,
+		ExpiresAt: time.Now().Add(server.config.PasswordResetTokenDuration),
+	}
+	_, err = server.store.CreatePasswordResetToken(ctx, arg)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	// resetUrl := fmt.Sprintf("http://%s/reset/password/%s", ctx.Request.Host, resetToken)
+	// message := fmt.Sprintf("You are receiving this email because you (or someone else) has requested a reset of password. Please click this link, %s", resetUrl)
+	// subject := "Reset Password"
+	//TODO: send email
+	rsp := forgotPasswordResponse{
+		Message: "Success",
+	}
+	ctx.JSON(http.StatusOK, rsp)
+}
+
+type resetPasswordRequest struct {
+	Password string `json:"password" binding:"required,min=6"`
+}
+type resetPasswordResponse struct {
+	Message string `json:"message"`
+}
+
+func (server *Server) resetPassword(ctx *gin.Context) {
+	psResetTokenHash := utils.HashRandomBytes([]byte(ctx.Param("reset_token")))
+	psResetToken, err := server.store.GetActivePasswordResetToken(ctx, psResetTokenHash)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	var req resetPasswordRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	newPasswordHash, err := utils.HashPassword(req.Password)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	arg := db.UpdateUserParams{
+		HashedPassword: sql.NullString{
+			String: newPasswordHash,
+			Valid:  true,
+		},
+		Username: psResetToken.Owner,
+	}
+	_, err = server.store.UpdateUser(ctx, arg)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	err = server.store.UpdatePasswordResetToken(ctx, psResetToken.Token)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	// TODO: Send sucess email
+	rsp := resetPasswordResponse{
+		Message: "Success",
+	}
+	ctx.JSON(http.StatusOK, rsp)
+}
+
+type emailValidationResponse struct {
+	Message string `json:"message"`
+}
+
+func (server *Server) validateEmail(ctx *gin.Context) {
+
+}

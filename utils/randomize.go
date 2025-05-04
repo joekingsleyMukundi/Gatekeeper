@@ -1,6 +1,9 @@
 package utils
 
 import (
+	cr "crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -30,4 +33,16 @@ func RandomUsername() string {
 }
 func RandomEmail() string {
 	return fmt.Sprintf("%v@gmail.com", RandomUsername())
+}
+func RandomByte(size int) ([]byte, error) {
+	byte := make([]byte, size)
+	_, err := cr.Read(byte)
+	if err != nil {
+		return nil, err
+	}
+	return byte, nil
+}
+func HashRandomBytes(bytes []byte) string {
+	hash := sha256.Sum256(bytes)
+	return hex.EncodeToString(hash[:])
 }

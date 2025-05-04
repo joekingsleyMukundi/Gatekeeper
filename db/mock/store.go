@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	uuid "github.com/google/uuid"
-	sqlc "github.com/joekingsleyMukundi/Gatekeeper/db/sqlc"
+	db "github.com/joekingsleyMukundi/Gatekeeper/db/sqlc"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,11 +42,41 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// CreateEmailVerifyToken mocks base method.
+func (m *MockStore) CreateEmailVerifyToken(ctx context.Context, arg db.CreateEmailVerifyTokenParams) (db.EmailVerificationToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateEmailVerifyToken", ctx, arg)
+	ret0, _ := ret[0].(db.EmailVerificationToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateEmailVerifyToken indicates an expected call of CreateEmailVerifyToken.
+func (mr *MockStoreMockRecorder) CreateEmailVerifyToken(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateEmailVerifyToken", reflect.TypeOf((*MockStore)(nil).CreateEmailVerifyToken), ctx, arg)
+}
+
+// CreatePasswordResetToken mocks base method.
+func (m *MockStore) CreatePasswordResetToken(ctx context.Context, arg db.CreatePasswordResetTokenParams) (db.PasswordResetToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePasswordResetToken", ctx, arg)
+	ret0, _ := ret[0].(db.PasswordResetToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatePasswordResetToken indicates an expected call of CreatePasswordResetToken.
+func (mr *MockStoreMockRecorder) CreatePasswordResetToken(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePasswordResetToken", reflect.TypeOf((*MockStore)(nil).CreatePasswordResetToken), ctx, arg)
+}
+
 // CreateSession mocks base method.
-func (m *MockStore) CreateSession(ctx context.Context, arg sqlc.CreateSessionParams) (sqlc.Session, error) {
+func (m *MockStore) CreateSession(ctx context.Context, arg db.CreateSessionParams) (db.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSession", ctx, arg)
-	ret0, _ := ret[0].(sqlc.Session)
+	ret0, _ := ret[0].(db.Session)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -58,10 +88,10 @@ func (mr *MockStoreMockRecorder) CreateSession(ctx, arg any) *gomock.Call {
 }
 
 // CreateUser mocks base method.
-func (m *MockStore) CreateUser(ctx context.Context, arg sqlc.CreateUserParams) (sqlc.User, error) {
+func (m *MockStore) CreateUser(ctx context.Context, arg db.CreateUserParams) (db.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateUser", ctx, arg)
-	ret0, _ := ret[0].(sqlc.User)
+	ret0, _ := ret[0].(db.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -72,11 +102,71 @@ func (mr *MockStoreMockRecorder) CreateUser(ctx, arg any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockStore)(nil).CreateUser), ctx, arg)
 }
 
+// GetActiveEmailVerifyToken mocks base method.
+func (m *MockStore) GetActiveEmailVerifyToken(ctx context.Context, token string) (db.EmailVerificationToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetActiveEmailVerifyToken", ctx, token)
+	ret0, _ := ret[0].(db.EmailVerificationToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetActiveEmailVerifyToken indicates an expected call of GetActiveEmailVerifyToken.
+func (mr *MockStoreMockRecorder) GetActiveEmailVerifyToken(ctx, token any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveEmailVerifyToken", reflect.TypeOf((*MockStore)(nil).GetActiveEmailVerifyToken), ctx, token)
+}
+
+// GetActivePasswordResetToken mocks base method.
+func (m *MockStore) GetActivePasswordResetToken(ctx context.Context, token string) (db.PasswordResetToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetActivePasswordResetToken", ctx, token)
+	ret0, _ := ret[0].(db.PasswordResetToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetActivePasswordResetToken indicates an expected call of GetActivePasswordResetToken.
+func (mr *MockStoreMockRecorder) GetActivePasswordResetToken(ctx, token any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActivePasswordResetToken", reflect.TypeOf((*MockStore)(nil).GetActivePasswordResetToken), ctx, token)
+}
+
+// GetEmailVerifyToken mocks base method.
+func (m *MockStore) GetEmailVerifyToken(ctx context.Context, token string) (db.EmailVerificationToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEmailVerifyToken", ctx, token)
+	ret0, _ := ret[0].(db.EmailVerificationToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEmailVerifyToken indicates an expected call of GetEmailVerifyToken.
+func (mr *MockStoreMockRecorder) GetEmailVerifyToken(ctx, token any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEmailVerifyToken", reflect.TypeOf((*MockStore)(nil).GetEmailVerifyToken), ctx, token)
+}
+
+// GetPasswordResetToken mocks base method.
+func (m *MockStore) GetPasswordResetToken(ctx context.Context, token string) (db.PasswordResetToken, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPasswordResetToken", ctx, token)
+	ret0, _ := ret[0].(db.PasswordResetToken)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPasswordResetToken indicates an expected call of GetPasswordResetToken.
+func (mr *MockStoreMockRecorder) GetPasswordResetToken(ctx, token any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPasswordResetToken", reflect.TypeOf((*MockStore)(nil).GetPasswordResetToken), ctx, token)
+}
+
 // GetSession mocks base method.
-func (m *MockStore) GetSession(ctx context.Context, id uuid.UUID) (sqlc.Session, error) {
+func (m *MockStore) GetSession(ctx context.Context, id uuid.UUID) (db.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSession", ctx, id)
-	ret0, _ := ret[0].(sqlc.Session)
+	ret0, _ := ret[0].(db.Session)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -88,10 +178,10 @@ func (mr *MockStoreMockRecorder) GetSession(ctx, id any) *gomock.Call {
 }
 
 // GetUser mocks base method.
-func (m *MockStore) GetUser(ctx context.Context, username string) (sqlc.User, error) {
+func (m *MockStore) GetUser(ctx context.Context, username string) (db.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUser", ctx, username)
-	ret0, _ := ret[0].(sqlc.User)
+	ret0, _ := ret[0].(db.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -103,10 +193,10 @@ func (mr *MockStoreMockRecorder) GetUser(ctx, username any) *gomock.Call {
 }
 
 // ListUsers mocks base method.
-func (m *MockStore) ListUsers(ctx context.Context, arg sqlc.ListUsersParams) ([]sqlc.User, error) {
+func (m *MockStore) ListUsers(ctx context.Context, arg db.ListUsersParams) ([]db.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListUsers", ctx, arg)
-	ret0, _ := ret[0].([]sqlc.User)
+	ret0, _ := ret[0].([]db.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -115,6 +205,49 @@ func (m *MockStore) ListUsers(ctx context.Context, arg sqlc.ListUsersParams) ([]
 func (mr *MockStoreMockRecorder) ListUsers(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUsers", reflect.TypeOf((*MockStore)(nil).ListUsers), ctx, arg)
+}
+
+// LocateUser mocks base method.
+func (m *MockStore) LocateUser(ctx context.Context, email string) (db.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LocateUser", ctx, email)
+	ret0, _ := ret[0].(db.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LocateUser indicates an expected call of LocateUser.
+func (mr *MockStoreMockRecorder) LocateUser(ctx, email any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LocateUser", reflect.TypeOf((*MockStore)(nil).LocateUser), ctx, email)
+}
+
+// UpdateEmailVerifyToken mocks base method.
+func (m *MockStore) UpdateEmailVerifyToken(ctx context.Context, token string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateEmailVerifyToken", ctx, token)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateEmailVerifyToken indicates an expected call of UpdateEmailVerifyToken.
+func (mr *MockStoreMockRecorder) UpdateEmailVerifyToken(ctx, token any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEmailVerifyToken", reflect.TypeOf((*MockStore)(nil).UpdateEmailVerifyToken), ctx, token)
+}
+
+// UpdatePasswordResetToken mocks base method.
+func (m *MockStore) UpdatePasswordResetToken(ctx context.Context, token string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePasswordResetToken", ctx, token)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePasswordResetToken indicates an expected call of UpdatePasswordResetToken.
+func (mr *MockStoreMockRecorder) UpdatePasswordResetToken(ctx, token any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePasswordResetToken", reflect.TypeOf((*MockStore)(nil).UpdatePasswordResetToken), ctx, token)
 }
 
 // UpdateSession mocks base method.
@@ -132,10 +265,10 @@ func (mr *MockStoreMockRecorder) UpdateSession(ctx, id any) *gomock.Call {
 }
 
 // UpdateUser mocks base method.
-func (m *MockStore) UpdateUser(ctx context.Context, arg sqlc.UpdateUserParams) (sqlc.User, error) {
+func (m *MockStore) UpdateUser(ctx context.Context, arg db.UpdateUserParams) (db.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateUser", ctx, arg)
-	ret0, _ := ret[0].(sqlc.User)
+	ret0, _ := ret[0].(db.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
