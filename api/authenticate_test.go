@@ -12,9 +12,11 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hibiken/asynq"
 	mockdb "github.com/joekingsleyMukundi/Gatekeeper/db/mock"
 	db "github.com/joekingsleyMukundi/Gatekeeper/db/sqlc"
 	"github.com/joekingsleyMukundi/Gatekeeper/utils"
+	"github.com/joekingsleyMukundi/Gatekeeper/workers"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -168,8 +170,9 @@ func TestCreateUserApi(t *testing.T) {
 
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
-
-			server := NewTestServer(t, store)
+			redisOpt := asynq.RedisClientOpt{}
+			taskDistributor := workers.NewRedisTaskDistributor(redisOpt)
+			server := NewTestServer(t, store, taskDistributor)
 			recorder := httptest.NewRecorder()
 
 			// Marshal body data to JSON

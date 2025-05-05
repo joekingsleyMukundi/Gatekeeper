@@ -6,15 +6,17 @@ import (
 
 	db "github.com/joekingsleyMukundi/Gatekeeper/db/sqlc"
 	"github.com/joekingsleyMukundi/Gatekeeper/utils"
+	"github.com/joekingsleyMukundi/Gatekeeper/workers"
 	"github.com/stretchr/testify/require"
 )
 
-func NewTestServer(t *testing.T, store db.Store) *Server {
+func NewTestServer(t *testing.T, store db.Store, taskDistributor workers.TaskDistributor) *Server {
 	config := utils.Config{
 		TokenSymmetricKey:   utils.RandomString(32),
 		AccessTokenDuration: time.Minute,
 	}
-	server, err := NewSever(config, store)
+
+	server, err := NewSever(config, store, taskDistributor)
 	require.NoError(t, err)
 	return server
 }

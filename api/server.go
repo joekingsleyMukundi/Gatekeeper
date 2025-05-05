@@ -7,24 +7,27 @@ import (
 	db "github.com/joekingsleyMukundi/Gatekeeper/db/sqlc"
 	"github.com/joekingsleyMukundi/Gatekeeper/tokens"
 	"github.com/joekingsleyMukundi/Gatekeeper/utils"
+	"github.com/joekingsleyMukundi/Gatekeeper/workers"
 )
 
 type Server struct {
-	TokenMaker tokens.Maker
-	config     utils.Config
-	store      db.Store
-	Router     *gin.Engine
+	TokenMaker      tokens.Maker
+	config          utils.Config
+	store           db.Store
+	Router          *gin.Engine
+	taskDistributor workers.TaskDistributor
 }
 
-func NewSever(config utils.Config, store db.Store) (*Server, error) {
+func NewSever(config utils.Config, store db.Store, taskDistributor workers.TaskDistributor) (*Server, error) {
 	tokenMaker, err := tokens.NewJWTMaker(config.TokenSymmetricKey)
 	if err != nil {
 		return nil, fmt.Errorf("ERROR: cannot create token: %s", err)
 	}
 	server := &Server{
-		TokenMaker: tokenMaker,
-		config:     config,
-		store:      store,
+		TokenMaker:      tokenMaker,
+		config:          config,
+		store:           store,
+		taskDistributor: taskDistributor,
 	}
 	server.routerSetup()
 	return server, nil
