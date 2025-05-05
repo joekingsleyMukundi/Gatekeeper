@@ -8,10 +8,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hibiken/asynq"
 	"github.com/joekingsleyMukundi/Gatekeeper/api"
 	db "github.com/joekingsleyMukundi/Gatekeeper/db/sqlc"
 	"github.com/joekingsleyMukundi/Gatekeeper/tokens"
 	"github.com/joekingsleyMukundi/Gatekeeper/utils"
+	"github.com/joekingsleyMukundi/Gatekeeper/workers"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,7 +22,9 @@ func NewTestServer(t *testing.T, store db.Store) *api.Server {
 		TokenSymmetricKey:   utils.RandomString(32),
 		AccessTokenDuration: time.Minute,
 	}
-	server, err := api.NewSever(config, store)
+	redisOpt := asynq.RedisClientOpt{}
+	taskDistributor := workers.NewRedisTaskDistributor(redisOpt)
+	server, err := api.NewSever(config, store, taskDistributor)
 	require.NoError(t, err)
 	return server
 }
