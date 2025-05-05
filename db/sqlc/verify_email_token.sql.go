@@ -87,7 +87,8 @@ func (q *Queries) GetEmailVerifyToken(ctx context.Context, token string) (EmailV
 const updateEmailVerifyToken = `-- name: UpdateEmailVerifyToken :exec
 UPDATE email_verification_tokens
 SET
-    used_at= NOW()
+    used_at= NOW(),
+    is_verified=true
 WHERE
     token = $1
 `

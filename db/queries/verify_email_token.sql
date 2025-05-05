@@ -21,6 +21,7 @@ WHERE "token" = $1
 -- name: UpdateEmailVerifyToken :exec
 UPDATE email_verification_tokens
 SET
-    used_at= NOW()
+    used_at= NOW(),
+    is_verified=true
 WHERE
     token = $1;

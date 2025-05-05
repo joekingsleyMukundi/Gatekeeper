@@ -299,5 +299,24 @@ type emailValidationResponse struct {
 }
 
 func (server *Server) validateEmail(ctx *gin.Context) {
-
+	emailVerificationTokenHash := utils.HashRandomBytes([]byte(ctx.Param("verification_token")))
+	emailVerificationTokenData, err := server.store.GetActiveEmailVerifyToken(ctx, emailVerificationTokenHash)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	err = server.store.UpdateEmailVerifyToken(ctx, emailVerificationTokenData.Token)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	// TODO: Send sucess email
+	rsp := emailValidationResponse{
+		Message: "Success",
+	}
+	ctx.JSON(http.StatusOK, rsp)
 }
