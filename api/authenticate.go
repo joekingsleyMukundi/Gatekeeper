@@ -8,8 +8,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/hibiken/asynq"
 	db "github.com/joekingsleyMukundi/Gatekeeper/db/sqlc"
 	"github.com/joekingsleyMukundi/Gatekeeper/utils"
+	"github.com/joekingsleyMukundi/Gatekeeper/workers"
 	"github.com/lib/pq"
 )
 
@@ -45,12 +47,41 @@ func (server *Server) createUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	arg := db.CreateUserParams{
-		Username:       req.Username,
-		Email:          req.Email,
-		HashedPassword: hashedPassword,
+	verifyEmailToken, err := utils.RandomByte(32)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
 	}
-	user, err := server.store.CreateUser(ctx, arg)
+	verifyEmailTokenHash := utils.HashRandomBytes(verifyEmailToken)
+	subject := "Welcome to Gatekeeper"
+	verifyEmail := fmt.Sprintf("http://%s/verify/email/%s", ctx.Request.Host, verifyEmailTokenHash)
+	content := fmt.Sprintf(`Hello %s,<br/>
+	Thank you for registering with us!<br/>
+	Please <a href="%s">click here</a> to verify your email address.<br/>
+	`, req.Username, verifyEmail)
+	to := req.Email
+	arg := db.CreateUserTxParam{
+		CreateUserParams: db.CreateUserParams{
+			Username:       req.Username,
+			Email:          req.Email,
+			HashedPassword: hashedPassword,
+		},
+		AfterCreate: func(user db.User) error {
+			taskPayload := &workers.PayloadSendEmail{
+				Username: req.Username,
+				Subject:  subject,
+				Message:  content,
+				To:       to,
+			}
+			opt := []asynq.Option{
+				asynq.MaxRetry(10),
+				asynq.ProcessIn(10 * time.Second),
+				asynq.Queue(workers.QueueCrtical),
+			}
+			return server.taskDistributor.DistributeTaskSendEmail(ctx, taskPayload, opt...)
+		},
+	}
+	txResult, err := server.store.CreateUserTx(ctx, arg)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Code.Name() {
@@ -62,7 +93,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	resp := newUserResponse(user)
+	resp := newUserResponse(txResult.User)
 	ctx.JSON(http.StatusOK, resp)
 }
 
