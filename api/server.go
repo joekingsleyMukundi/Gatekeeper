@@ -36,10 +36,12 @@ func NewSever(config utils.Config, store db.Store, taskDistributor workers.TaskD
 func (server *Server) routerSetup() {
 	router := gin.Default()
 	// TO DO : Create user suth apis
-	router.POST("/users/register", server.createUser)
-	router.POST("/users/login", server.loginUser)
-	router.POST("/auth/renew_access", server.renewAccessToken)
-
+	router.POST("/api/v1/auth/register", server.createUser)
+	router.POST("/api/v1/auth/login", server.loginUser)
+	router.POST("/api/v1/auth/token/refresh", server.renewAccessToken)
+	router.POST("/api/v1/auth/password/forgot", server.forgotPassword)
+	router.PATCH("/api/v1/auth/password/reset/:token", server.resetPassword)
+	router.PATCH("/api/v1/auth/email/verify/:token", server.validateEmail)
 	server.Router = router
 }
 func (server *Server) Start(address string) error {

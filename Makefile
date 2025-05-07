@@ -21,8 +21,10 @@ sqlc:
 	sqlc generate
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/joekingsleyMukundi/Gatekeeper/db/sqlc Store
+redis:
+	docker run --name redis -p 6379:6379 -d redis:7-alpine
 test:
 	go test -v -cover ./...
 run:
 	go run main.go
-.PHONY: getpostgres postgres startpostgres stoppostgres createdb dropdb sqlc test run mock
+.PHONY: getpostgres postgres startpostgres stoppostgres createdb dropdb sqlc test run mock redis

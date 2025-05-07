@@ -16,9 +16,6 @@ const TaskSendEmail = "task:send_verfy_email"
 
 type PayloadSendEmail struct {
 	Username string `json:"username"`
-	Subject  string `json:"subject"`
-	To       string `json:"to"`
-	Message  string `json:"message"`
 }
 
 func (distributor *RedisTaskDistributor) DistributeTaskSendEmail(
@@ -26,7 +23,7 @@ func (distributor *RedisTaskDistributor) DistributeTaskSendEmail(
 ) error {
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("Failed to marshal s=verify email paylosd to json: %w", err)
+		return fmt.Errorf("Failed to marshal send verify email paylosd to json: %w", err)
 	}
 	task := asynq.NewTask(TaskSendEmail, jsonPayload, opts...)
 	info, err := distributor.client.EnqueueContext(ctx, task)
@@ -44,6 +41,9 @@ func (processor *RedisTaskPrcessor) ProcessTaskSendEmail(ctx context.Context, ta
 	}
 	user, err := processor.store.GetUser(ctx, payload.Username)
 	if err != nil {
+		// if err == sql.ErrNoRows {
+		// 	return fmt.Errorf("user doesnot exist: %w", asynq.SkipRetry)
+		// }
 		return fmt.Errorf("Failed to get user while processing verify email sender: %w", err)
 	}
 	emailverifyToken, err := utils.RandomByte(32)
@@ -60,7 +60,7 @@ func (processor *RedisTaskPrcessor) ProcessTaskSendEmail(ctx context.Context, ta
 		return fmt.Errorf("failed to create verify email: %w", err)
 	}
 	// subject := "Welcome to Gatekeeper"
-	// verifyUrl := fmt.Sprintf("http://localhost:8080/v1/verify_email/%d",emailverifyToken)
+	// verifyUrl := fmt.Sprintf("http://localhost:8080/api/v1/auth/email/verify/%d",emailverifyToken)
 	// content := fmt.Sprintf(`Hello %s,<br/>
 	// Thank you for registering with us!<br/>
 	// Please <a href="%s">click here</a> to verify your email address.<br/>

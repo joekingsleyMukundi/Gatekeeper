@@ -29,10 +29,9 @@ type createUserResponse struct {
 
 func newUserResponse(user db.User) createUserResponse {
 	return createUserResponse{
-		Username:          user.Username,
-		Email:             user.Email,
-		CreatedAt:         user.CreatedAt,
-		PasswordChangedAt: user.PasswordChangedAt,
+		Username:  user.Username,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
 	}
 }
 
@@ -47,19 +46,6 @@ func (server *Server) createUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	verifyEmailToken, err := utils.RandomByte(32)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-	verifyEmailTokenHash := utils.HashRandomBytes(verifyEmailToken)
-	subject := "Welcome to Gatekeeper"
-	verifyEmail := fmt.Sprintf("http://%s/verify/email/%s", ctx.Request.Host, verifyEmailTokenHash)
-	content := fmt.Sprintf(`Hello %s,<br/>
-	Thank you for registering with us!<br/>
-	Please <a href="%s">click here</a> to verify your email address.<br/>
-	`, req.Username, verifyEmail)
-	to := req.Email
 	arg := db.CreateUserTxParam{
 		CreateUserParams: db.CreateUserParams{
 			Username:       req.Username,
@@ -69,9 +55,6 @@ func (server *Server) createUser(ctx *gin.Context) {
 		AfterCreate: func(user db.User) error {
 			taskPayload := &workers.PayloadSendEmail{
 				Username: req.Username,
-				Subject:  subject,
-				Message:  content,
-				To:       to,
 			}
 			opt := []asynq.Option{
 				asynq.MaxRetry(10),
@@ -253,20 +236,30 @@ func (server *Server) forgotPassword(ctx *gin.Context) {
 		return
 	}
 	psResetTokenHash := utils.HashRandomBytes(resetToken)
-	arg := db.CreatePasswordResetTokenParams{
-		Owner:     user.Username,
-		Token:     psResetTokenHash,
-		ExpiresAt: time.Now().Add(server.config.PasswordResetTokenDuration),
+	arg := db.CreatePasswordResetTokenTxParams{
+		CreatePasswordResetTokenParams: db.CreatePasswordResetTokenParams{
+			Owner:     user.Username,
+			Token:     psResetTokenHash,
+			ExpiresAt: time.Now().Add(server.config.PasswordResetTokenDuration),
+		},
+		AfterCreate: func(passwordResetToken db.PasswordResetToken) error {
+			taskPayload := &workers.PayloadSendPasswordResetTokenEmail{
+				Username:           user.Username,
+				ResetPasswordToken: resetToken,
+			}
+			opt := []asynq.Option{
+				asynq.MaxRetry(10),
+				asynq.ProcessIn(10 * time.Second),
+				asynq.Queue(workers.QueueCrtical),
+			}
+			return server.taskDistributor.DistributeTaskSendPasswordResetTokenEmail(ctx, taskPayload, opt...)
+		},
 	}
-	_, err = server.store.CreatePasswordResetToken(ctx, arg)
+	_, err = server.store.CreatePasswordResetTokenTx(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	// resetUrl := fmt.Sprintf("http://%s/reset/password/%s", ctx.Request.Host, resetToken)
-	// message := fmt.Sprintf("You are receiving this email because you (or someone else) has requested a reset of password. Please click this link, %s", resetUrl)
-	// subject := "Reset Password"
-	//TODO: send email
 	rsp := forgotPasswordResponse{
 		Message: "Success",
 	}
@@ -281,7 +274,7 @@ type resetPasswordResponse struct {
 }
 
 func (server *Server) resetPassword(ctx *gin.Context) {
-	psResetTokenHash := utils.HashRandomBytes([]byte(ctx.Param("reset_token")))
+	psResetTokenHash := utils.HashRandomBytes([]byte(ctx.Param("token")))
 	psResetToken, err := server.store.GetActivePasswordResetToken(ctx, psResetTokenHash)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -318,7 +311,6 @@ func (server *Server) resetPassword(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	// TODO: Send sucess email
 	rsp := resetPasswordResponse{
 		Message: "Success",
 	}
@@ -330,7 +322,7 @@ type emailValidationResponse struct {
 }
 
 func (server *Server) validateEmail(ctx *gin.Context) {
-	emailVerificationTokenHash := utils.HashRandomBytes([]byte(ctx.Param("verification_token")))
+	emailVerificationTokenHash := utils.HashRandomBytes([]byte(ctx.Param("token")))
 	emailVerificationTokenData, err := server.store.GetActiveEmailVerifyToken(ctx, emailVerificationTokenHash)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -345,7 +337,6 @@ func (server *Server) validateEmail(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	// TODO: Send sucess email
 	rsp := emailValidationResponse{
 		Message: "Success",
 	}
