@@ -9,6 +9,7 @@ import (
 type Store interface {
 	Querier
 	CreateUserTx(ctx context.Context, arg CreateUserTxParam) (CreateUserTxResults, error)
+	CreatePasswordResetTokenTx(ctx context.Context, arg CreatePasswordResetTokenTxParams) (CreatePasswordResetTokenTxResult, error)
 }
 type SQLStorage struct {
 	*Queries

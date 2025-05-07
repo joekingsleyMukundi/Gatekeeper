@@ -48,6 +48,7 @@ func NewRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store) TaskPr
 func (processor *RedisTaskPrcessor) Start() error {
 	mux := asynq.NewServeMux()
 	mux.HandleFunc(TaskSendEmail, processor.ProcessTaskSendEmail)
+	mux.HandleFunc(TaskSendPasswordResetTokenEmail, processor.ProcessTaskSendPasswordResetTokenEmail)
 	return processor.server.Start(mux)
 }
 func (processor *RedisTaskPrcessor) Shutdown() {
