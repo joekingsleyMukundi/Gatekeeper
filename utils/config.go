@@ -16,6 +16,9 @@ type Config struct {
 	PasswordResetTokenDuration time.Duration `mapstructure:"PASSWORD_RESET_TOKEN_DURATION"`
 	VerifyEmailTokenDuration   time.Duration `mapstructure:"VERIFY_EMAIL_TOKEN_DURATION"`
 	RedisAddress               string        `mapstructure:"REDIS_ADDRESS"`
+	EmailSenderName            string        `mapstructure:"EMAIL_SENDER_NAME"`
+	EmailSenderAddress         string        `mapstructure:"EMAIL_SENDER_ADDRESS"`
+	EmailSenderPassword        string        `mapstructure:"EMAIL_SENDER_PASSWORD"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
