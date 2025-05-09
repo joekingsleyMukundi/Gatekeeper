@@ -7,6 +7,7 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/joekingsleyMukundi/Gatekeeper/api"
 	db "github.com/joekingsleyMukundi/Gatekeeper/db/sqlc"
+	"github.com/joekingsleyMukundi/Gatekeeper/services/mail"
 	"github.com/joekingsleyMukundi/Gatekeeper/utils"
 	"github.com/joekingsleyMukundi/Gatekeeper/workers"
 	_ "github.com/lib/pq"
@@ -26,7 +27,7 @@ func main() {
 		Addr: config.RedisAddress,
 	}
 	taskDistributor := workers.NewRedisTaskDistributor(redisOpt)
-	go runTaskProcessor(redisOpt, store)
+	go runTaskProcessor(redisOpt, store, config)
 	runGinServer(config, store, taskDistributor)
 }
 func runGinServer(config utils.Config, store db.Store, taskDistributor workers.TaskDistributor) {
@@ -43,8 +44,10 @@ func runGinServer(config utils.Config, store db.Store, taskDistributor workers.T
 func runTaskProcessor(
 	redisOpt asynq.RedisClientOpt,
 	store db.Store,
+	config utils.Config,
 ) {
-	taskProcessor := workers.NewRedisTaskProcessor(redisOpt, store)
+	mailer := mail.NewGmailSender(config.EmailSenderName, config.EmailSenderAddress, config.EmailSenderPassword)
+	taskProcessor := workers.NewRedisTaskProcessor(redisOpt, store, mailer)
 	log.Println("start task processor")
 	err := taskProcessor.Start()
 	if err != nil {
