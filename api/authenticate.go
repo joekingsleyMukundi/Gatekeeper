@@ -21,10 +21,9 @@ type createUserRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 }
 type createUserResponse struct {
-	Username          string    `json:"username"`
-	Email             string    `json:"email"`
-	CreatedAt         time.Time `json:"created_at"`
-	PasswordChangedAt time.Time `json:"password_created_at"`
+	Username  string    `json:"username"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 func newUserResponse(user db.User) createUserResponse {

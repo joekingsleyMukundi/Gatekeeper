@@ -45,10 +45,14 @@ func (processor *RedisTaskPrcessor) ProcessTaskSendPasswordResetTokenEmail(ctx c
 		}
 		return fmt.Errorf("Failed to get user while processing verify email sender: %w", err)
 	}
-	// resetUrl := fmt.Sprintf("http://%s/api/v1/auth/password/reset/%s", ctx.Request.Host, resetToken)
-	// message := fmt.Sprintf("You are receiving this email because you (or someone else) has requested a reset of password. Please click this link, %s", resetUrl)
-	// subject := "Reset Password"
-	// to := []string{user.Email}
+	resetUrl := fmt.Sprintf("http://localhost:8080/api/v1/auth/password/reset/%s", payload.ResetPasswordToken)
+	content := fmt.Sprintf("You are receiving this email because you (or someone else) has requested a reset of password. Please click this link, %s", resetUrl)
+	subject := "Reset Password"
+	to := []string{user.Email}
+	err = processor.mailer.SendEmail(subject, content, to, nil, nil, nil)
+	if err != nil {
+		return fmt.Errorf("failed to send password reset email: %s", err)
+	}
 	log.Info().Str("type", task.Type()).Bytes("payload", task.Payload()).
 		Str("email", user.Email).Msg("processed task")
 	return nil

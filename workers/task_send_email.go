@@ -59,13 +59,17 @@ func (processor *RedisTaskPrcessor) ProcessTaskSendEmail(ctx context.Context, ta
 	if err != nil {
 		return fmt.Errorf("failed to create verify email: %w", err)
 	}
-	// subject := "Welcome to Gatekeeper"
-	// verifyUrl := fmt.Sprintf("http://localhost:8080/api/v1/auth/email/verify/%d",emailverifyToken)
-	// content := fmt.Sprintf(`Hello %s,<br/>
-	// Thank you for registering with us!<br/>
-	// Please <a href="%s">click here</a> to verify your email address.<br/>
-	// `, user.Username, verifyUrl)
-	// to := []string{user.Email}
+	subject := "Welcome to Gatekeeper"
+	verifyUrl := fmt.Sprintf("http://localhost:8080/api/v1/auth/email/verify/%d", emailverifyToken)
+	content := fmt.Sprintf(`Hello %s,<br/>
+	Thank you for registering with us!<br/>
+	Please <a href="%s">click here</a> to verify your email address.<br/>
+	`, user.Username, verifyUrl)
+	to := []string{user.Email}
+	err = processor.mailer.SendEmail(subject, content, to, nil, nil, nil)
+	if err != nil {
+		return fmt.Errorf("failed to send password reset email: %s", err)
+	}
 	log.Info().Str("type", task.Type()).Bytes("payload", task.Payload()).
 		Str("email", user.Email).Msg("processed task")
 	return nil
