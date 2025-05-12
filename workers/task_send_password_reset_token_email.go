@@ -14,7 +14,7 @@ const TaskSendPasswordResetTokenEmail = "task:send_reset_password_email"
 
 type PayloadSendPasswordResetTokenEmail struct {
 	Username           string `json:"username"`
-	ResetPasswordToken []byte `json:"reset_password_token"`
+	ResetPasswordToken string `json:"reset_password_token"`
 }
 
 func (distributor *RedisTaskDistributor) DistributeTaskSendPasswordResetTokenEmail(

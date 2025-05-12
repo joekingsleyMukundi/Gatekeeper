@@ -41,7 +41,7 @@ func (server *Server) routerSetup() {
 	router.POST("/api/v1/auth/token/refresh", server.renewAccessToken)
 	router.POST("/api/v1/auth/password/forgot", server.forgotPassword)
 	router.PATCH("/api/v1/auth/password/reset/:token", server.resetPassword)
-	router.PATCH("/api/v1/auth/email/verify/:token", server.validateEmail)
+	router.GET("/api/v1/auth/email/verify/:token", server.validateEmail)
 	server.Router = router
 }
 func (server *Server) Start(address string) error {
