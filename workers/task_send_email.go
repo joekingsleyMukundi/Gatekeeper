@@ -46,11 +46,8 @@ func (processor *RedisTaskPrcessor) ProcessTaskSendEmail(ctx context.Context, ta
 		// }
 		return fmt.Errorf("Failed to get user while processing verify email sender: %w", err)
 	}
-	emailverifyToken, err := utils.RandomByte(32)
-	if err != nil {
-		return fmt.Errorf("error creating email vrification token: %w", err)
-	}
-	emailVerifyTokenOHash := utils.HashRandomBytes(emailverifyToken)
+	emailverifyToken := utils.RandomString(32)
+	emailVerifyTokenOHash := utils.HashRandomBytes([]byte(emailverifyToken))
 	_, err = processor.store.CreateEmailVerifyToken(ctx, db.CreateEmailVerifyTokenParams{
 		Username:  user.Username,
 		Token:     emailVerifyTokenOHash,
@@ -60,7 +57,7 @@ func (processor *RedisTaskPrcessor) ProcessTaskSendEmail(ctx context.Context, ta
 		return fmt.Errorf("failed to create verify email: %w", err)
 	}
 	subject := "Welcome to Gatekeeper"
-	verifyUrl := fmt.Sprintf("http://localhost:8080/api/v1/auth/email/verify/%d", emailverifyToken)
+	verifyUrl := fmt.Sprintf("http://localhost:8080/api/v1/auth/email/verify/%s", emailverifyToken)
 	content := fmt.Sprintf(`Hello %s,<br/>
 	Thank you for registering with us!<br/>
 	Please <a href="%s">click here</a> to verify your email address.<br/>

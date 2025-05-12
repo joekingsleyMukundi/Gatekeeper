@@ -21,6 +21,7 @@ type Querier interface {
 	GetPasswordResetToken(ctx context.Context, token string) (PasswordResetToken, error)
 	GetSession(ctx context.Context, id uuid.UUID) (Session, error)
 	GetUser(ctx context.Context, username string) (User, error)
+	IsUserEmailVerified(ctx context.Context, username string) (bool, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
 	LocateUser(ctx context.Context, email string) (User, error)
 	UpdateEmailVerifyToken(ctx context.Context, token string) error

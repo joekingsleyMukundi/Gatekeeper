@@ -98,51 +98,37 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	user, err := server.store.GetUser(ctx, req.Username)
+	txResult, err := server.store.TxLoginUser(ctx, db.TxLoginUserParams{
+		Username:             req.Username,
+		Password:             req.Password,
+		UserAgent:            ctx.Request.UserAgent(),
+		ClientIP:             ctx.ClientIP(),
+		TokenMaker:           server.TokenMaker,
+		AccessTokenDuration:  server.config.AccessTokenDuration,
+		RefreshTokenDuration: server.config.RefreshTokenDuration,
+	})
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err.Error() == "user not found" {
 			ctx.JSON(http.StatusNotFound, err)
+			return
+		}
+		if err.Error() == "email not verified" || err.Error() == "invalid credentials" {
+			ctx.JSON(http.StatusUnauthorized, errorResponse(err))
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	err = utils.ConfirmPassword(req.Password, user.HashedPassword)
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
-		return
-	}
-	accesstoken, accessPayload, err := server.TokenMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-	refreshToken, refreshPayload, err := server.TokenMaker.CreateToken(user.Username, server.config.RefreshTokenDuration)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-	session, err := server.store.CreateSession(ctx, db.CreateSessionParams{
-		ID:           refreshPayload.ID,
-		Username:     user.Username,
-		RefreshToken: refreshToken,
-		UserAgent:    ctx.Request.UserAgent(),
-		ClientIp:     ctx.ClientIP(),
-		IsBlocked:    false,
-		ExpiresAt:    refreshPayload.ExpiredAt,
-	})
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
+
 	rsp := loginUserResponse{
-		SessionID:             session.ID,
-		AccessToken:           accesstoken,
-		AccessTokenExpiresAt:  accessPayload.ExpiredAt,
-		RefreshToken:          refreshToken,
-		RefreshTokenExpiresAt: refreshPayload.ExpiredAt,
-		User:                  newUserResponse(user),
+		SessionID:             txResult.Session.ID,
+		AccessToken:           txResult.AccessToken,
+		AccessTokenExpiresAt:  txResult.AccessPayload.ExpiredAt,
+		RefreshToken:          txResult.RefreshToken,
+		RefreshTokenExpiresAt: txResult.RefreshPayload.ExpiredAt,
+		User:                  newUserResponse(txResult.User),
 	}
+
 	ctx.JSON(http.StatusOK, rsp)
 }
 
@@ -229,12 +215,8 @@ func (server *Server) forgotPassword(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	resetToken, err := utils.RandomByte(20)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-	psResetTokenHash := utils.HashRandomBytes(resetToken)
+	resetToken := utils.RandomString(20)
+	psResetTokenHash := utils.HashRandomBytes([]byte(resetToken))
 	arg := db.CreatePasswordResetTokenTxParams{
 		CreatePasswordResetTokenParams: db.CreatePasswordResetTokenParams{
 			Owner:     user.Username,
@@ -274,44 +256,28 @@ type resetPasswordResponse struct {
 
 func (server *Server) resetPassword(ctx *gin.Context) {
 	psResetTokenHash := utils.HashRandomBytes([]byte(ctx.Param("token")))
-	psResetToken, err := server.store.GetActivePasswordResetToken(ctx, psResetTokenHash)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, errorResponse(err))
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
 	var req resetPasswordRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
-	newPasswordHash, err := utils.HashPassword(req.Password)
+
+	_, err := server.store.TxResetPassword(ctx, db.TxResetPasswordParams{
+		Token:       ctx.Param("token"),
+		NewPassword: req.Password,
+		HashedToken: psResetTokenHash,
+		Now:         time.Now().UTC(),
+	})
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-	arg := db.UpdateUserParams{
-		HashedPassword: sql.NullString{
-			String: newPasswordHash,
-			Valid:  true,
-		},
-		Username: psResetToken.Owner,
-	}
-	_, err = server.store.UpdateUser(ctx, arg)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-	err = server.store.UpdatePasswordResetToken(ctx, psResetToken.Token)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+		} else {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		}
 		return
 	}
 	rsp := resetPasswordResponse{
-		Message: "Success",
+		Message: "Password reset successful",
 	}
 	ctx.JSON(http.StatusOK, rsp)
 }

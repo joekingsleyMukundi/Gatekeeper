@@ -44,9 +44,11 @@ func (q *Queries) CreateEmailVerifyToken(ctx context.Context, arg CreateEmailVer
 
 const getActiveEmailVerifyToken = `-- name: GetActiveEmailVerifyToken :one
 SELECT id, username, token, created_at, expires_at, used_at, is_verified 
-FROM "email_verification_tokens"
-WHERE "token" = $1
-    AND ("used_at" IS NULL OR "expires_at" < NOW())
+FROM email_verification_tokens
+WHERE token = $1
+  AND used_at IS NULL
+  AND expires_at > NOW()
+LIMIT 1
 `
 
 func (q *Queries) GetActiveEmailVerifyToken(ctx context.Context, token string) (EmailVerificationToken, error) {
@@ -82,6 +84,22 @@ func (q *Queries) GetEmailVerifyToken(ctx context.Context, token string) (EmailV
 		&i.IsVerified,
 	)
 	return i, err
+}
+
+const isUserEmailVerified = `-- name: IsUserEmailVerified :one
+SELECT EXISTS (
+    SELECT 1
+    FROM email_verification_tokens
+    WHERE username = $1
+        AND is_verified = true
+)
+`
+
+func (q *Queries) IsUserEmailVerified(ctx context.Context, username string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, isUserEmailVerified, username)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const updateEmailVerifyToken = `-- name: UpdateEmailVerifyToken :exec
