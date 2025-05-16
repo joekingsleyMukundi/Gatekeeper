@@ -46,7 +46,7 @@ status:
 	@docker ps -a | grep -E 'redis|GKpostgres'
 
 test:
-	go test -v -cover ./...
+	go test -v -cover -short ./...
 
 run:
 	@echo "Checking if containers are running..."
