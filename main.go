@@ -11,6 +11,7 @@ import (
 	"github.com/joekingsleyMukundi/Gatekeeper/utils"
 	"github.com/joekingsleyMukundi/Gatekeeper/workers"
 	_ "github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -27,11 +28,16 @@ func main() {
 		Addr: config.RedisAddress,
 	}
 	taskDistributor := workers.NewRedisTaskDistributor(redisOpt)
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     config.RedisAddress,
+		Password: "",
+		DB:       0,
+	})
 	go runTaskProcessor(redisOpt, store, config)
-	runGinServer(config, store, taskDistributor)
+	runGinServer(config, store, taskDistributor, rdb)
 }
-func runGinServer(config utils.Config, store db.Store, taskDistributor workers.TaskDistributor) {
-	server, err := api.NewSever(config, store, taskDistributor)
+func runGinServer(config utils.Config, store db.Store, taskDistributor workers.TaskDistributor, redisClient *redis.Client) {
+	server, err := api.NewSever(config, store, taskDistributor, redisClient)
 	if err != nil {
 		log.Fatal("cannot connet to server:", err)
 	}
