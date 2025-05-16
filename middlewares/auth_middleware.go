@@ -19,7 +19,7 @@ const (
 func errorResponse(err error) gin.H {
 	return gin.H{"error": err.Error()}
 }
-func authMiddleware(tMaker tokens.Maker) gin.HandlerFunc {
+func AuthMiddleware(tMaker tokens.Maker) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authorizationHeader := ctx.GetHeader(authorizationHeaderKey)
 		if len(authorizationHeader) == 0 {

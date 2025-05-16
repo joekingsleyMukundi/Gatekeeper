@@ -1,4 +1,4 @@
-package middlewares
+package api
 
 import (
 	"fmt"
@@ -8,26 +8,17 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/hibiken/asynq"
-	"github.com/joekingsleyMukundi/Gatekeeper/api"
-	db "github.com/joekingsleyMukundi/Gatekeeper/db/sqlc"
+	"github.com/joekingsleyMukundi/Gatekeeper/middlewares"
 	"github.com/joekingsleyMukundi/Gatekeeper/tokens"
 	"github.com/joekingsleyMukundi/Gatekeeper/utils"
-	"github.com/joekingsleyMukundi/Gatekeeper/workers"
 	"github.com/stretchr/testify/require"
 )
 
-func NewTestServer(t *testing.T, store db.Store) *api.Server {
-	config := utils.Config{
-		TokenSymmetricKey:   utils.RandomString(32),
-		AccessTokenDuration: time.Minute,
-	}
-	redisOpt := asynq.RedisClientOpt{}
-	taskDistributor := workers.NewRedisTaskDistributor(redisOpt)
-	server, err := api.NewSever(config, store, taskDistributor)
-	require.NoError(t, err)
-	return server
-}
+const (
+	authorizationHeaderKey  = "authorization"
+	authorizationTYpeBearor = "bearer"
+	authorizationPayloadKey = "authorization_payload"
+)
 
 func addAuthorization(
 	t *testing.T,
@@ -98,11 +89,11 @@ func TestAuthMiddleware(t *testing.T) {
 	for i := range testCases {
 		tc := testCases[i]
 		t.Run(tc.name, func(t *testing.T) {
-			server := NewTestServer(t, nil)
+			server := NewTestServer(t, nil, nil, nil)
 			authPath := "/auth"
 			server.Router.GET(
 				authPath,
-				authMiddleware(server.TokenMaker),
+				middlewares.AuthMiddleware(server.TokenMaker),
 				func(ctx *gin.Context) {
 					ctx.JSON(http.StatusOK, gin.H{})
 				},
