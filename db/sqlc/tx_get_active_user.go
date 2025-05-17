@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/joekingsleyMukundi/Gatekeeper/tokens"
 	"github.com/joekingsleyMukundi/Gatekeeper/utils"
 )
@@ -60,14 +61,18 @@ func (store *SQLStorage) TxLoginUser(ctx context.Context, arg TxLoginUserParams)
 		if err != nil {
 			return err
 		}
+		refreshPayloadId, err := uuid.Parse(refreshPayload.ID)
+		if err != nil {
+			return fmt.Errorf("Error parsing uuid: %d", err)
+		}
 		session, err := q.CreateSession(ctx, CreateSessionParams{
-			ID:           refreshPayload.ID,
+			ID:           refreshPayloadId,
 			Username:     user.Username,
 			RefreshToken: refreshToken,
 			UserAgent:    arg.UserAgent,
 			ClientIp:     arg.ClientIP,
 			IsBlocked:    false,
-			ExpiresAt:    refreshPayload.ExpiredAt,
+			ExpiresAt:    refreshPayload.ExpiresAt.Time,
 		})
 		if err != nil {
 			return err

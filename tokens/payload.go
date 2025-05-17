@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
@@ -13,14 +14,12 @@ var (
 )
 
 type Payload struct {
-	ID        uuid.UUID `json:"id"`
-	Username  string    `json:"username"`
-	IssuedAt  time.Time `json:"issued_at"`
-	ExpiredAt time.Time `json:"expired_at"`
+	Username string `json:"username"`
+	jwt.RegisteredClaims
 }
 
 func (p *Payload) Valid() error {
-	if time.Now().After(p.ExpiredAt) {
+	if time.Now().After(p.ExpiresAt.Time) {
 		return ErrExpredToken
 	}
 	return nil
@@ -31,10 +30,15 @@ func NewPayload(username string, duration time.Duration) (*Payload, error) {
 		return nil, err
 	}
 	payload := &Payload{
-		ID:        tokenId,
-		Username:  username,
-		IssuedAt:  time.Now(),
-		ExpiredAt: time.Now().Add(duration),
+		Username: username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "Gatekeeper",
+			Subject:   username,
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			ID:        tokenId.String(),
+		},
 	}
 	return payload, nil
 }

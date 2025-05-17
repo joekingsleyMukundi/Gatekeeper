@@ -25,8 +25,8 @@ func TestJWTMaker(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, payload)
 	require.Equal(t, payload.Username, username)
-	require.WithinDuration(t, issuedAt, payload.IssuedAt, time.Second)
-	require.WithinDuration(t, expiredAt, payload.ExpiredAt, time.Second)
+	require.WithinDuration(t, issuedAt, payload.IssuedAt.Time, time.Second)
+	require.WithinDuration(t, expiredAt, payload.ExpiresAt.Time, time.Second)
 }
 func TestExpiredJWTToken(t *testing.T) {
 	maker, err := NewJWTMaker(utils.RandomString(32))
