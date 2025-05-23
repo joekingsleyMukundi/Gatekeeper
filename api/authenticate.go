@@ -185,7 +185,7 @@ func (server *Server) renewAccessToken(ctx *gin.Context) {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
 		return
 	}
-
+	//TODO Token rotation
 	accesstoken, accessPayload, err := server.TokenMaker.CreateToken(refreshTokenPayload.Username, server.config.AccessTokenDuration)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))

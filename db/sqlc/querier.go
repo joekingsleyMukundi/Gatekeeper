@@ -26,7 +26,7 @@ type Querier interface {
 	LocateUser(ctx context.Context, email string) (User, error)
 	UpdateEmailVerifyToken(ctx context.Context, token string) error
 	UpdatePasswordResetToken(ctx context.Context, token string) error
-	UpdateSession(ctx context.Context, id uuid.UUID) error
+	UpdateSession(ctx context.Context, arg UpdateSessionParams) (Session, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }
 

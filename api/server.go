@@ -1,7 +1,9 @@
 package api
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -21,6 +23,7 @@ type Server struct {
 	Router          *gin.Engine
 	taskDistributor workers.TaskDistributor
 	redisClient     *redis.Client
+	//tokenManager    internals.Manager
 }
 
 func NewSever(config utils.Config, store db.Store, taskDistributor workers.TaskDistributor, redisClient *redis.Client) (*Server, error) {
@@ -34,17 +37,21 @@ func NewSever(config utils.Config, store db.Store, taskDistributor workers.TaskD
 		store:           store,
 		taskDistributor: taskDistributor,
 		redisClient:     redisClient,
+		// tokenManager:    tokenManager,
 	}
 	server.routerSetup()
 	return server, nil
 }
 
 func (server *Server) routerSetup() {
+	_, err := server.redisClient.Ping(context.Background()).Result()
+	if err != nil {
+		log.Fatalf("failed to connect to redis: %v", err)
+	}
 	router := gin.Default()
 	iprateLimiter := internals.NewSlidingWindowLimiter(server.redisClient, 5, 15*time.Minute)
 	emailrateLimiter := internals.NewSlidingWindowLimiter(server.redisClient, 3, 30*time.Minute)
 
-	// TO DO : Create user suth apis
 	router.POST("/api/v1/auth/register", server.createUser)
 	router.POST("/api/v1/auth/login", server.loginUser)
 	router.POST("/api/v1/auth/token/refresh", server.renewAccessToken)
