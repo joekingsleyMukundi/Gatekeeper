@@ -123,9 +123,9 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	rsp := loginUserResponse{
 		SessionID:             txResult.Session.ID,
 		AccessToken:           txResult.AccessToken,
-		AccessTokenExpiresAt:  txResult.AccessPayload.ExpiredAt,
+		AccessTokenExpiresAt:  txResult.AccessPayload.ExpiresAt.Time,
 		RefreshToken:          txResult.RefreshToken,
-		RefreshTokenExpiresAt: txResult.RefreshPayload.ExpiredAt,
+		RefreshTokenExpiresAt: txResult.RefreshPayload.ExpiresAt.Time,
 		User:                  newUserResponse(txResult.User),
 	}
 
@@ -151,7 +151,12 @@ func (server *Server) renewAccessToken(ctx *gin.Context) {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
 		return
 	}
-	session, err := server.store.GetSession(ctx, refreshTokenPayload.ID)
+	refreshPayloadId, err := uuid.Parse(refreshTokenPayload.ID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	session, err := server.store.GetSession(ctx, refreshPayloadId)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, err)
@@ -180,7 +185,7 @@ func (server *Server) renewAccessToken(ctx *gin.Context) {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
 		return
 	}
-
+	//TODO Token rotation
 	accesstoken, accessPayload, err := server.TokenMaker.CreateToken(refreshTokenPayload.Username, server.config.AccessTokenDuration)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -188,7 +193,7 @@ func (server *Server) renewAccessToken(ctx *gin.Context) {
 	}
 	rsp := renewAccessTokenResponse{
 		AccessToken:          accesstoken,
-		AccessTokenExpiresAt: accessPayload.ExpiredAt,
+		AccessTokenExpiresAt: accessPayload.ExpiresAt.Time,
 	}
 	ctx.JSON(http.StatusOK, rsp)
 }

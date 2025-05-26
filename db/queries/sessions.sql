@@ -16,9 +16,12 @@ RETURNING *;
 SELECT * FROM sessions
 WHERE id = $1 LIMIT 1;
 
--- name: UpdateSession :exec
+-- name: UpdateSession :one
 UPDATE sessions
 SET
-    is_blocked = true
+    refresh_token = COALESCE(sqlc.narg(refresh_token), refresh_token),
+    is_blocked = COALESCE(sqlc.narg(is_blocked), is_blocked),
+    expires_at = COALESCE(sqlc.narg(expires_at), expires_at)
 WHERE
-    id = $1;
+    id = $1
+RETURNING *;

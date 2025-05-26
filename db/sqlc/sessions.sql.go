@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -82,15 +83,41 @@ func (q *Queries) GetSession(ctx context.Context, id uuid.UUID) (Session, error)
 	return i, err
 }
 
-const updateSession = `-- name: UpdateSession :exec
+const updateSession = `-- name: UpdateSession :one
 UPDATE sessions
 SET
-    is_blocked = true
+    refresh_token = COALESCE($2, refresh_token),
+    is_blocked = COALESCE($3, is_blocked),
+    expires_at = COALESCE($4, expires_at)
 WHERE
     id = $1
+RETURNING id, username, refresh_token, user_agent, client_ip, is_blocked, expires_at, created_at
 `
 
-func (q *Queries) UpdateSession(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, updateSession, id)
-	return err
+type UpdateSessionParams struct {
+	ID           uuid.UUID      `json:"id"`
+	RefreshToken sql.NullString `json:"refresh_token"`
+	IsBlocked    sql.NullBool   `json:"is_blocked"`
+	ExpiresAt    sql.NullTime   `json:"expires_at"`
+}
+
+func (q *Queries) UpdateSession(ctx context.Context, arg UpdateSessionParams) (Session, error) {
+	row := q.db.QueryRowContext(ctx, updateSession,
+		arg.ID,
+		arg.RefreshToken,
+		arg.IsBlocked,
+		arg.ExpiresAt,
+	)
+	var i Session
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.RefreshToken,
+		&i.UserAgent,
+		&i.ClientIp,
+		&i.IsBlocked,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+	)
+	return i, err
 }
