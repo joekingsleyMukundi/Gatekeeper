@@ -23,10 +23,10 @@ type Server struct {
 	Router          *gin.Engine
 	taskDistributor workers.TaskDistributor
 	redisClient     *redis.Client
-	//tokenManager    internals.Manager
+	tokenManager    internals.Manager
 }
 
-func NewSever(config utils.Config, store db.Store, taskDistributor workers.TaskDistributor, redisClient *redis.Client) (*Server, error) {
+func NewSever(config utils.Config, store db.Store, taskDistributor workers.TaskDistributor, redisClient *redis.Client, tokenManager internals.Manager) (*Server, error) {
 	tokenMaker, err := tokens.NewJWTMaker(config.TokenSymmetricKey)
 	if err != nil {
 		return nil, fmt.Errorf("ERROR: cannot create token: %s", err)
@@ -37,7 +37,7 @@ func NewSever(config utils.Config, store db.Store, taskDistributor workers.TaskD
 		store:           store,
 		taskDistributor: taskDistributor,
 		redisClient:     redisClient,
-		// tokenManager:    tokenManager,
+		tokenManager:    tokenManager,
 	}
 	server.routerSetup()
 	return server, nil
