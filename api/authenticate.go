@@ -128,7 +128,28 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		RefreshTokenExpiresAt: txResult.RefreshPayload.ExpiresAt.Time,
 		User:                  newUserResponse(txResult.User),
 	}
+	/**
+	  Using SameSite and Secure cookie attributes
+	  	http.SetCookie(ctx.Writer, &http.Cookie{
+	  		Name:     "access_token",
+	  		Value:    txResult.AccessToken,
+	  		MaxAge:   900,
+	  		Path:     "/",
+	  		Secure:   true,
+	  		HttpOnly: true,
+	  		SameSite: http.SameSiteStrictMode,
+	  	})
 
+	  	http.SetCookie(ctx.Writer, &http.Cookie{
+	  		Name:     "refresh_token",
+	  		Value:    txResult.RefreshToken,
+	  		MaxAge:   604800,
+	  		Path:     "/auth/refresh",
+	  		Secure:   true,
+	  		HttpOnly: true,
+	  		SameSite: http.SameSiteStrictMode,
+	  	})
+	  **/
 	ctx.JSON(http.StatusOK, rsp)
 }
 

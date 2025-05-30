@@ -76,6 +76,9 @@ func (store *SQLStorage) TxRenewToken(ctx context.Context, arg TxRenewTokenParam
 
 			return fmt.Errorf("security violation: token reuse detected")
 		}
+		if err := arg.TokenManager.RevokeToken(arg.RefreshToken, arg.RefreshTokenPayload.ID); err != nil {
+			return fmt.Errorf("failed to revoke old refresh token: %w", err)
+		}
 		accessToken, accessPayload, err := arg.TokenMaker.CreateToken(
 			arg.RefreshTokenPayload.Username,
 			arg.Config.AccessTokenDuration,

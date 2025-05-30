@@ -38,9 +38,9 @@ func (tm *TokenManager) IsTokenRevoked(token string) (bool, string, error) {
 	return true, sessionId, nil
 }
 func (tm *TokenManager) RevokeToken(token, sessionID string) error {
-	err := tm.redisClient.Set(tm.context, token, sessionID, tm.tokenTTL)
-	if err != nil {
-		return fmt.Errorf("failed to revoke token: %v", err)
+	cmd := tm.redisClient.Set(tm.context, token, sessionID, tm.tokenTTL)
+	if err := cmd.Err(); err != nil {
+		return fmt.Errorf("failed to revoke token: %w", err)
 	}
 	return nil
 }

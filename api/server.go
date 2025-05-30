@@ -52,9 +52,9 @@ func (server *Server) routerSetup() {
 	iprateLimiter := internals.NewSlidingWindowLimiter(server.redisClient, 5, 15*time.Minute)
 	emailrateLimiter := internals.NewSlidingWindowLimiter(server.redisClient, 3, 30*time.Minute)
 
-	router.POST("/api/v1/auth/register", server.createUser)
-	router.POST("/api/v1/auth/login", server.loginUser)
-	router.POST("/api/v1/auth/token/refresh", server.renewAccessToken)
+	router.POST("/api/v1/auth/register", middlewares.RegisterRateLimitMiddleware(iprateLimiter), server.createUser)
+	router.POST("/api/v1/auth/login", middlewares.LoginRateLimitMiddleware(iprateLimiter, emailrateLimiter), server.loginUser)
+	router.POST("/api/v1/auth/token/refresh", middlewares.RenewAccessTokenRateLimitMiddleware(iprateLimiter), server.renewAccessToken)
 	router.POST("/api/v1/auth/password/forgot", middlewares.ForgotPasswordRateLimitMiddleware(iprateLimiter, emailrateLimiter), server.forgotPassword)
 	router.PATCH("/api/v1/auth/password/reset/:token", server.resetPassword)
 	router.GET("/api/v1/auth/email/verify/:token", server.validateEmail)
