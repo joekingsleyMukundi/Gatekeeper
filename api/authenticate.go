@@ -2,8 +2,8 @@ package api
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -128,7 +128,28 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		RefreshTokenExpiresAt: txResult.RefreshPayload.ExpiresAt.Time,
 		User:                  newUserResponse(txResult.User),
 	}
+	/**
+	  Using SameSite and Secure cookie attributes
+	  	http.SetCookie(ctx.Writer, &http.Cookie{
+	  		Name:     "access_token",
+	  		Value:    txResult.AccessToken,
+	  		MaxAge:   900,
+	  		Path:     "/",
+	  		Secure:   true,
+	  		HttpOnly: true,
+	  		SameSite: http.SameSiteStrictMode,
+	  	})
 
+	  	http.SetCookie(ctx.Writer, &http.Cookie{
+	  		Name:     "refresh_token",
+	  		Value:    txResult.RefreshToken,
+	  		MaxAge:   604800,
+	  		Path:     "/auth/refresh",
+	  		Secure:   true,
+	  		HttpOnly: true,
+	  		SameSite: http.SameSiteStrictMode,
+	  	})
+	  **/
 	ctx.JSON(http.StatusOK, rsp)
 }
 
@@ -151,49 +172,32 @@ func (server *Server) renewAccessToken(ctx *gin.Context) {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
 		return
 	}
-	refreshPayloadId, err := uuid.Parse(refreshTokenPayload.ID)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
+	txParams := db.TxRenewTokenParams{
+		RefreshToken:        req.RefreshToken,
+		RefreshTokenPayload: refreshTokenPayload,
+		TokenManager:        server.tokenManager,
+		TokenMaker:          server.TokenMaker,
+		Config:              server.config,
 	}
-	session, err := server.store.GetSession(ctx, refreshPayloadId)
+	result, err := server.store.TxRenewToken(ctx, txParams)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, err)
-			return
+		switch {
+		case strings.Contains(err.Error(), "session not found"):
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+		case strings.Contains(err.Error(), "session is blocked"),
+			strings.Contains(err.Error(), "session username mismatch"),
+			strings.Contains(err.Error(), "refresh token mismatch"),
+			strings.Contains(err.Error(), "refresh token expired"),
+			strings.Contains(err.Error(), "security violation"):
+			ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		default:
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		}
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-	if session.IsBlocked {
-		err := fmt.Errorf("ERROR: Blocked session")
-		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
-		return
-	}
-	if session.Username != refreshTokenPayload.Username {
-		err := fmt.Errorf("ERROR: Invalid User")
-		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
-		return
-	}
-	if session.RefreshToken != req.RefreshToken {
-		err := fmt.Errorf("ERROR: Missmatch Tokes")
-		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
-		return
-	}
-	if time.Now().After(session.ExpiresAt) {
-		err := fmt.Errorf("ERROR: Token expired")
-		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
-		return
-	}
-	//TODO Token rotation
-	accesstoken, accessPayload, err := server.TokenMaker.CreateToken(refreshTokenPayload.Username, server.config.AccessTokenDuration)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 	rsp := renewAccessTokenResponse{
-		AccessToken:          accesstoken,
-		AccessTokenExpiresAt: accessPayload.ExpiresAt.Time,
+		AccessToken:          result.AccessToken,
+		AccessTokenExpiresAt: result.AccessTokenPayload.ExpiresAt.Time,
 	}
 	ctx.JSON(http.StatusOK, rsp)
 }

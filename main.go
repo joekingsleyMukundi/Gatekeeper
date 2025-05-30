@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
+	"time"
 
 	"github.com/hibiken/asynq"
 	"github.com/joekingsleyMukundi/Gatekeeper/api"
 	db "github.com/joekingsleyMukundi/Gatekeeper/db/sqlc"
+	"github.com/joekingsleyMukundi/Gatekeeper/internals"
 	"github.com/joekingsleyMukundi/Gatekeeper/services/mail"
 	"github.com/joekingsleyMukundi/Gatekeeper/utils"
 	"github.com/joekingsleyMukundi/Gatekeeper/workers"
@@ -33,11 +36,12 @@ func main() {
 		Password: "",
 		DB:       0,
 	})
+	tokenManager := internals.NewTokenManager(rdb, context.Background(), config.RefreshTokenDuration+(24*time.Hour))
 	go runTaskProcessor(redisOpt, store, config)
-	runGinServer(config, store, taskDistributor, rdb)
+	runGinServer(config, store, taskDistributor, rdb, tokenManager)
 }
-func runGinServer(config utils.Config, store db.Store, taskDistributor workers.TaskDistributor, redisClient *redis.Client) {
-	server, err := api.NewSever(config, store, taskDistributor, redisClient)
+func runGinServer(config utils.Config, store db.Store, taskDistributor workers.TaskDistributor, redisClient *redis.Client, tokenManager internals.Manager) {
+	server, err := api.NewSever(config, store, taskDistributor, redisClient, tokenManager)
 	if err != nil {
 		log.Fatal("cannot connet to server:", err)
 	}

@@ -12,6 +12,7 @@ type Store interface {
 	CreatePasswordResetTokenTx(ctx context.Context, arg CreatePasswordResetTokenTxParams) (CreatePasswordResetTokenTxResult, error)
 	TxLoginUser(ctx context.Context, arg TxLoginUserParams) (TxLoginUserResult, error)
 	TxResetPassword(ctx context.Context, arg TxResetPasswordParams) (TxResetPasswordResult, error)
+	TxRenewToken(ctx context.Context, arg TxRenewTokenParams) (TxRenewTokenResults, error)
 }
 type SQLStorage struct {
 	*Queries

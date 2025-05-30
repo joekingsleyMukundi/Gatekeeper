@@ -9,7 +9,6 @@ import (
 )
 
 type Manager interface {
-	NewTokenManager(redisClient *redis.Client, context context.Context, tokenTTL time.Duration) Manager
 	IsTokenRevoked(token string) (bool, string, error)
 	RevokeToken(token, sessionID string) error
 	RevokeAccessToken(tokenString string, expirationTime time.Time) error
@@ -21,7 +20,7 @@ type TokenManager struct {
 	tokenTTL    time.Duration
 }
 
-func (tm *TokenManager) NewTokenManager(redisClient *redis.Client, context context.Context, tokenTTL time.Duration) Manager {
+func NewTokenManager(redisClient *redis.Client, context context.Context, tokenTTL time.Duration) Manager {
 	return &TokenManager{
 		redisClient: redisClient,
 		context:     context,
@@ -39,9 +38,9 @@ func (tm *TokenManager) IsTokenRevoked(token string) (bool, string, error) {
 	return true, sessionId, nil
 }
 func (tm *TokenManager) RevokeToken(token, sessionID string) error {
-	err := tm.redisClient.Set(tm.context, token, sessionID, tm.tokenTTL)
-	if err != nil {
-		return fmt.Errorf("failed to revoke token: %v", err)
+	cmd := tm.redisClient.Set(tm.context, token, sessionID, tm.tokenTTL)
+	if err := cmd.Err(); err != nil {
+		return fmt.Errorf("failed to revoke token: %w", err)
 	}
 	return nil
 }
